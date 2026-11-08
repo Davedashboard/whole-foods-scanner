@@ -7,15 +7,11 @@ nitrite-cured sausage = 0.
 Product data comes from [Open Food Facts](https://world.openfoodfacts.org) (free, open, no API key).
 The score is calculated on the phone by `index.html` — no server, no account.
 
-## Put it on your phone (GitHub Pages, ~3 minutes)
+## Put it on your phone
 
-1. Create a new GitHub repo (e.g. `purely`) and upload **every file in this folder** to the root.
-2. Repo → **Settings → Pages** → Source: *Deploy from a branch* → Branch: `main` / root → Save.
-3. Open `https://<your-username>.github.io/purely/` on your phone.
-4. **iPhone (Safari):** Share → *Add to Home Screen*. **Android (Chrome):** ⋮ → *Install app*.
-
-It now opens full-screen from its own icon, uses the camera to scan, and keeps your scan history.
-(The camera needs HTTPS, which GitHub Pages gives you.)
+1. Repo → **Settings → Pages** → Source: *Deploy from a branch* → Branch: `main`, folder `/ (root)` → Save.
+2. After a minute, open **https://davedashboard.github.io/whole-foods-scanner/** on your phone.
+3. **iPhone (Safari):** Share → *Add to Home Screen*. **Android (Chrome):** ⋮ → *Install app*.
 
 ## Files
 - `index.html` — the whole app (UI + scanner + scoring engine)
