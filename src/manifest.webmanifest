@@ -1,7 +1,7 @@
 {
   "id": "/whole-foods-scanner/",
-  "name": "Purely \u2014 how real is your food?",
-  "short_name": "Purely",
+  "name": "Whole Food Scanner",
+  "short_name": "Whole Food Scanner",
   "start_url": "/whole-foods-scanner/",
   "scope": "/whole-foods-scanner/",
   "display": "standalone",

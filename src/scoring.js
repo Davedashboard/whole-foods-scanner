@@ -1,4 +1,4 @@
-/* Purely — purity scoring engine.
+/* Whole Food Scanner — purity scoring engine.
  * Scores how close a food is to its pure, whole-ingredient form (0–100).
  * 100 = a whole food as nature made it (apple, milk, coffee beans, sea salt).
  * 0   = ultra-processed (nitrite-cured meats, sweetener/colour-laden products).

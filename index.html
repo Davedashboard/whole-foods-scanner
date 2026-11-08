@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Purely — how real is your food?</title>
+<title>Whole Food Scanner</title>
 <meta name="theme-color" content="#1f3a2b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Purely">
+<meta name="apple-mobile-web-app-title" content="Whole Food Scanner">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -27,7 +27,7 @@
   button{font:inherit;color:inherit;cursor:pointer}
   .wrap{max-width:560px;margin:0 auto;padding:calc(var(--safe-t) + 16px) 18px calc(var(--safe-b) + 40px)}
   header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-  .logo{display:flex;align-items:center;gap:10px;font-family:Fraunces,Georgia,serif;font-weight:800;font-size:26px;letter-spacing:-.5px;color:var(--brand);background:none;border:0;padding:0}
+  .logo{display:flex;align-items:center;gap:10px;font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(20px,6.4vw,26px);white-space:nowrap;letter-spacing:-.5px;color:var(--brand);background:none;border:0;padding:0}
   .logo svg{width:34px;height:34px}
   .icon-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center}
   .icon-btn svg{width:20px;height:20px}
@@ -148,7 +148,7 @@
   <header class="top">
     <button class="logo" id="homeLogo" aria-label="Home">
       <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#1f3a2b"/><path d="M20 42c0-14 10-22 26-24-1 16-9 26-22 26" fill="#8fd19e"/><path d="M20 46c4-8 10-14 18-19" stroke="#1f3a2b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
-      Purely
+      Whole Food Scanner
     </button>
     <button class="icon-btn" id="aboutBtn" aria-label="How scoring works">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -240,7 +240,7 @@
       <button class="btn" id="againBtn">Scan another</button>
       <a class="btn ghost" id="offLink" target="_blank" rel="noopener">Open Food Facts</a>
     </div>
-    <p class="small muted" style="margin-top:14px">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener" style="color:inherit">Open Food Facts</a> (ODbL). Purity score is Purely's own.</p>
+    <p class="small muted" style="margin-top:14px">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener" style="color:inherit">Open Food Facts</a> (ODbL). Purity score is Whole Food Scanner's own.</p>
   </main>
 </div>
 
@@ -278,7 +278,7 @@
 <!-- About -->
 <div class="sheet-bg" id="aboutSheet">
   <div class="sheet about">
-    <h3>How Purely scores food</h3>
+    <h3>How Whole Food Scanner scores food</h3>
     <p>Not "is it healthy?" but <b>"how close is this to the pure, real thing?"</b> An apple is 100. Butter (cream + salt) is ~99. A tin of tomatoes is ~94 — great, but it isn't a tomato. Then it slides down as factory steps pile up.</p>
     <div class="legend">
       <div><i style="background:var(--pure)">90+</i> Pure — whole food, as nature made it</div>
@@ -304,7 +304,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* Purely — purity scoring engine.
+/* Whole Food Scanner — purity scoring engine.
  * Scores how close a food is to its pure, whole-ingredient form (0–100).
  * 100 = a whole food as nature made it (apple, milk, coffee beans, sea salt).
  * 0   = ultra-processed (nitrite-cured meats, sweetener/colour-laden products).

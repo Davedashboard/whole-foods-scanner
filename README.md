@@ -1,4 +1,4 @@
-# Purely — how real is your food?
+# Whole Food Scanner
 
 Scan a food barcode and get a **purity score out of 100**: how close the product is to the pure,
 whole ingredient it's meant to be. Apple = 100, butter ≈ 99, tinned tomatoes ≈ 94, battered fish ≈ 45,
