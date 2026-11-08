@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Purely — how real is your food?</title>
+<meta name="theme-color" content="#1f3a2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Purely">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f0e6; --card:#fffdf8; --ink:#1f2a24; --muted:#6b7068; --line:#e6dfd0;
+    --brand:#1f3a2b; --brand-2:#2f5a40;
+    --pure:#2e8b57; --light:#7cb342; --processed:#e8a33a; --upf:#e4572e; --avoid:#b3261e;
+    --radius:20px;
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .wrap{max-width:560px;margin:0 auto;padding:calc(var(--safe-t) + 16px) 18px calc(var(--safe-b) + 40px)}
+  header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:Fraunces,Georgia,serif;font-weight:800;font-size:26px;letter-spacing:-.5px;color:var(--brand);background:none;border:0;padding:0}
+  .logo svg{width:34px;height:34px}
+  .icon-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center}
+  .icon-btn svg{width:20px;height:20px}
+
+  /* Home */
+  .hero{background:var(--brand);color:#f5f0e6;border-radius:28px;padding:26px 22px 22px;position:relative;overflow:hidden}
+  .hero h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:30px;line-height:1.08;margin:0 0 8px;letter-spacing:-.6px}
+  .hero p{margin:0 0 20px;opacity:.85;font-size:15px;max-width:30ch}
+  .hero .leaf{position:absolute;right:-30px;top:-30px;width:170px;opacity:.12}
+  .scan-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#f5f0e6;color:var(--brand);border:0;border-radius:16px;padding:18px;font-weight:700;font-size:18px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
+  .scan-btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.18)}
+  .scan-btn svg{width:26px;height:26px}
+  .alt-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .alt{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#f5f0e6;border-radius:14px;padding:11px 6px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .alt svg{width:20px;height:20px;opacity:.9}
+  .alt input{display:none}
+
+  .scale{margin:22px 0 6px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .scale h2,.section h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
+  .bar{height:10px;border-radius:99px;background:linear-gradient(90deg,var(--avoid) 0%,var(--upf) 20%,var(--processed) 45%,var(--light) 70%,var(--pure) 90%,var(--pure) 100%)}
+  .bar-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+  .examples{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .ex{font-size:12.5px;padding:5px 9px;border-radius:99px;background:var(--bg);border:1px solid var(--line);display:flex;gap:6px;align-items:center}
+  .ex b{font-variant-numeric:tabular-nums}
+
+  .section{margin-top:22px}
+  .hist{display:flex;flex-direction:column;gap:8px}
+  .hist-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;text-align:left;width:100%}
+  .hist-item .pill{flex:0 0 44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
+  .hist-item .t{flex:1;min-width:0}
+  .hist-item .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hist-item .s{font-size:12.5px;color:var(--muted)}
+  .empty{color:var(--muted);font-size:14px;padding:6px 2px}
+  .link-btn{background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;padding:4px 0}
+
+  /* Result */
+  .result{display:none}
+  .back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--brand);font-weight:600;padding:6px 0;margin-bottom:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .prod{display:flex;gap:14px;align-items:center;margin-bottom:16px}
+  .prod img{width:64px;height:64px;object-fit:contain;border-radius:12px;background:#fff;border:1px solid var(--line)}
+  .prod .nm{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:21px;line-height:1.15;letter-spacing:-.3px}
+  .prod .br{color:var(--muted);font-size:14px;margin-top:2px}
+  .score-wrap{display:flex;align-items:center;gap:18px}
+  .ring{position:relative;width:132px;height:132px;flex:0 0 132px}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .ring .num b{font-family:Fraunces,Georgia,serif;font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .ring .num span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .verdict .lbl{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:24px;line-height:1.1}
+  .verdict p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+
+  .why{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);font-size:14px;color:var(--muted)}
+  .why li{margin:3px 0}
+  .why ul{margin:0;padding-left:18px}
+
+  .flags .flag{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .flags .flag:last-child{border-bottom:0}
+  .dot{flex:0 0 10px;height:10px;border-radius:50%;margin-top:6px}
+  .flag .fn{font-weight:600;text-transform:capitalize}
+  .flag .fw{font-size:13.5px;color:var(--muted)}
+
+  .ing{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .ing:last-child{border-bottom:0}
+  .ing .in{flex:1;min-width:0}
+  .ing .iname{font-weight:600;text-transform:capitalize;overflow-wrap:anywhere}
+  .ing .ikind{font-size:12.5px;color:var(--muted)}
+  .ing .pen{font-variant-numeric:tabular-nums;font-weight:700;font-size:13.5px;white-space:nowrap}
+  .ing.sub{padding-left:16px}
+  
+  .tone-good .dot{background:var(--pure)} .tone-ok .dot{background:var(--light)} .tone-meh .dot{background:var(--processed)} .tone-bad .dot{background:var(--upf)} .tone-worst .dot{background:var(--avoid)}
+  .tone-good .pen{color:var(--pure)} .tone-ok .pen{color:var(--brand-2)} .tone-meh .pen{color:#a86f12} .tone-bad .pen,.tone-worst .pen{color:var(--avoid)}
+
+  details.raw{margin-top:12px;font-size:13.5px;color:var(--muted)}
+  details.raw summary{cursor:pointer;font-weight:600;color:var(--ink)}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .btn{border:0;border-radius:14px;padding:14px;font-weight:700;background:var(--brand);color:#f5f0e6;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn.ghost{background:var(--card);color:var(--brand);border:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+
+  /* Scanner overlay */
+  .scanner{position:fixed;inset:0;background:#000;z-index:50;display:none}
+  .scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .scanner .frame{position:absolute;left:50%;top:44%;width:min(78vw,340px);height:min(42vw,190px);transform:translate(-50%,-50%);border-radius:18px;box-shadow:0 0 0 9999px rgba(0,0,0,.55)}
+  .scanner .frame::before,.scanner .frame::after{content:"";position:absolute;inset:0;border-radius:18px;border:3px solid #f5f0e6}
+  .scanner .laser{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#7cdc8c;box-shadow:0 0 12px #7cdc8c;animation:scan 1.6s ease-in-out infinite}
+  @keyframes scan{0%,100%{transform:translateY(-70px)}50%{transform:translateY(70px)}}
+  .scanner .hint{position:absolute;left:0;right:0;top:calc(44% + 120px);text-align:center;color:#f5f0e6;font-weight:600;padding:0 24px}
+  .scanner .close{position:absolute;right:18px;top:calc(var(--safe-t) + 18px);width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:24px}
+  .scanner .torch{position:absolute;left:18px;top:calc(var(--safe-t) + 18px);height:46px;border-radius:23px;border:0;background:rgba(255,255,255,.18);color:#fff;padding:0 16px;font-weight:600;display:none}
+
+  /* Sheets */
+  .sheet-bg{position:fixed;inset:0;background:rgba(20,28,22,.45);z-index:60;display:none;align-items:flex-end;justify-content:center}
+  .sheet{background:var(--card);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:20px 18px calc(var(--safe-b) + 22px);max-height:88vh;overflow:auto}
+  .sheet h3{font-family:Fraunces,Georgia,serif;font-size:22px;margin:0 0 6px}
+  .sheet p{color:var(--muted);margin:0 0 14px;font-size:14.5px}
+  .field{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;font:inherit;background:#fff;color:var(--ink)}
+  textarea.field{min-height:150px;resize:vertical}
+  .sheet .actions{margin-top:14px}
+  .about h4{margin:16px 0 4px;font-size:15px}
+  .about p{margin:0 0 8px}
+  .legend{display:grid;gap:8px;margin:10px 0}
+  .legend div{display:flex;gap:10px;align-items:center;font-size:14px}
+  .legend i{width:44px;height:26px;border-radius:8px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:700;font-size:12px}
+
+  .toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;max-width:90vw;text-align:center;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .loading{display:none;text-align:center;padding:60px 0;color:var(--muted)}
+  .spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);margin:0 auto 14px;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <button class="logo" id="homeLogo" aria-label="Home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#1f3a2b"/><path d="M20 42c0-14 10-22 26-24-1 16-9 26-22 26" fill="#8fd19e"/><path d="M20 46c4-8 10-14 18-19" stroke="#1f3a2b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      Purely
+    </button>
+    <button class="icon-btn" id="aboutBtn" aria-label="How scoring works">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </button>
+  </header>
+
+  <!-- HOME -->
+  <main id="home">
+    <section class="hero">
+      <svg class="leaf" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 56C8 26 26 10 60 4 58 36 40 56 12 56" fill="#f5f0e6"/></svg>
+      <h1>How real is<br>your food?</h1>
+      <p>Scan a barcode. 100 means it's the pure thing. 0 means it was made in a lab.</p>
+      <button class="scan-btn" id="scanBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>
+        Scan barcode
+      </button>
+      <div class="alt-row">
+        <label class="alt" id="photoLabel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Photo
+          <input type="file" accept="image/*" capture="environment" id="photoInput">
+        </label>
+        <button class="alt" id="typeBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+          Type code
+        </button>
+        <button class="alt" id="pasteBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 12h8M8 16h5"/></svg>
+          Ingredients
+        </button>
+      </div>
+    </section>
+
+    <section class="scale">
+      <h2>The purity scale</h2>
+      <div class="bar"></div>
+      <div class="bar-labels"><span>0 · Avoid</span><span>45</span><span>70</span><span>100 · Pure</span></div>
+      <div class="examples" id="examples"></div>
+    </section>
+
+    <section class="section">
+      <h2>Recent scans</h2>
+      <div class="hist" id="history"></div>
+    </section>
+  </main>
+
+  <div class="loading" id="loading"><div class="spinner"></div><div id="loadingText">Looking it up…</div></div>
+
+  <!-- RESULT -->
+  <main class="result" id="result">
+    <button class="back" id="backBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </button>
+    <div class="card">
+      <div class="prod">
+        <img id="rImg" alt="" hidden>
+        <div>
+          <div class="nm" id="rName"></div>
+          <div class="br" id="rBrand"></div>
+        </div>
+      </div>
+      <div class="score-wrap">
+        <div class="ring">
+          <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#efe9dc" stroke-width="12"/><circle id="rArc" cx="60" cy="60" r="52" fill="none" stroke="#2e8b57" stroke-width="12" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)"/></svg>
+          <div class="num"><div><b id="rScore">–</b><span>/ 100</span></div></div>
+        </div>
+        <div class="verdict">
+          <div class="lbl" id="rLabel"></div>
+          <p id="rBlurb"></p>
+          <div class="chips" id="rChips"></div>
+        </div>
+      </div>
+      <div class="why" id="rWhy"></div>
+    </div>
+
+    <div class="section" id="flagsSec">
+      <h2>What's pulling it down</h2>
+      <div class="card flags" id="rFlags"></div>
+    </div>
+
+    <div class="section" id="ingSec">
+      <h2>Every ingredient</h2>
+      <div class="card" id="rIngs"></div>
+      <details class="raw" id="rRawWrap"><summary>Ingredients as printed</summary><p id="rRaw"></p></details>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="againBtn">Scan another</button>
+      <a class="btn ghost" id="offLink" target="_blank" rel="noopener">Open Food Facts</a>
+    </div>
+    <p class="small muted" style="margin-top:14px">Product data from <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener" style="color:inherit">Open Food Facts</a> (ODbL). Purity score is Purely's own.</p>
+  </main>
+</div>
+
+<!-- Scanner -->
+<div class="scanner" id="scanner">
+  <video id="video" playsinline muted autoplay></video>
+  <div class="frame"><div class="laser"></div></div>
+  <div class="hint" id="scanHint">Line the barcode up inside the box</div>
+  <button class="close" id="closeScan" aria-label="Close">×</button>
+  <button class="torch" id="torchBtn">Torch</button>
+</div>
+
+<!-- Type barcode -->
+<div class="sheet-bg" id="typeSheet">
+  <form class="sheet" id="typeForm">
+    <h3>Type the barcode</h3>
+    <p>The numbers under the bars — usually 13 digits.</p>
+    <input class="field" id="codeInput" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="e.g. 5000159484695">
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" type="submit">Look up</button></div>
+  </form>
+</div>
+
+<!-- Paste ingredients -->
+<div class="sheet-bg" id="pasteSheet">
+  <form class="sheet" id="pasteForm">
+    <h3>Score an ingredients list</h3>
+    <p>Paste or type the ingredients from the pack — handy when a product isn't in the database.</p>
+    <input class="field" id="pasteName" placeholder="Product name (optional)" style="margin-bottom:10px">
+    <textarea class="field" id="pasteText" placeholder="Fish (56%), Wheat Flour, Rapeseed Oil, Maize Flour, Palm Fat, Raising Agents (Diphosphates, Sodium Carbonates)…"></textarea>
+    <input type="hidden" id="pasteCode">
+    <div class="actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn" type="submit">Score it</button></div>
+  </form>
+</div>
+
+<!-- About -->
+<div class="sheet-bg" id="aboutSheet">
+  <div class="sheet about">
+    <h3>How Purely scores food</h3>
+    <p>Not "is it healthy?" but <b>"how close is this to the pure, real thing?"</b> An apple is 100. Butter (cream + salt) is ~99. A tin of tomatoes is ~94 — great, but it isn't a tomato. Then it slides down as factory steps pile up.</p>
+    <div class="legend">
+      <div><i style="background:var(--pure)">90+</i> Pure — whole food, as nature made it</div>
+      <div><i style="background:var(--light)">70+</i> Lightly processed — real food, a little help</div>
+      <div><i style="background:var(--processed)">45+</i> Processed — real food plus refined bits</div>
+      <div><i style="background:var(--upf)">20+</i> Ultra-processed — more factory than kitchen</div>
+      <div><i style="background:var(--avoid)">0+</i> Avoid — heavily ultra-processed</div>
+    </div>
+    <h4>What costs points</h4>
+    <p><b>Nothing</b> for whole foods: meat, fish, milk, eggs, fruit, veg, grains, nuts, herbs, spices, salt, water, coffee, tea.</p>
+    <p><b>A little</b> for traditional steps: vinegar, cheese, yeast, cultures, olive oil, juice, purée.</p>
+    <p><b>More</b> for refined ingredients: white flour, sugar, seed oils, palm fat, starch, milk powders.</p>
+    <p><b>A lot</b> for ultra-processed markers: dextrose, glucose syrups, maltodextrin, flavourings, yeast extract, modified starch, protein isolates, hydrogenated fats.</p>
+    <p><b>Most</b> for cosmetic additives: artificial colours, sweeteners, flavour enhancers, industrial emulsifiers.</p>
+    <p><b>Instant near-zero</b> for nitrites and nitrates in cured meat.</p>
+    <h4>Plus</h4>
+    <p>Ingredients listed first count for more (they make up more of the product). Each extra ingredient takes off a little. And several ultra-processed markers together take off extra, because together they mean a formulated product rather than a recipe.</p>
+    <p class="small">Unlike Yuka, a long list of real ingredients still scores well, and a single refined ingredient doesn't get a free pass.</p>
+    <div class="actions" style="grid-template-columns:1fr"><button class="btn" data-close>Got it</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* Purely — purity scoring engine.
+ * Scores how close a food is to its pure, whole-ingredient form (0–100).
+ * 100 = a whole food as nature made it (apple, milk, coffee beans, sea salt).
+ * 0   = ultra-processed (nitrite-cured meats, sweetener/colour-laden products).
+ *
+ * Works from an ingredients list (text, or Open Food Facts structured data).
+ */
+(function (root) {
+  'use strict';
+
+  // ---------- Rule tables ----------
+  // kind: whole | minimal | refined | marker | additive | cosmetic | severe
+  // pts: base penalty. cap: hard ceiling on final score when present.
+  // Order matters: first match wins, so specific patterns come before general ones.
+
+  const RULES = [
+    // ---- Severe: processed-meat curing agents ----
+    { re: /\b(sodium|potassium) nitrite|\bnitrite|\be ?25[01]\b/, kind: 'severe', pts: 45, cap: 5, label: 'Nitrite (curing agent)', why: 'Nitrites are used to cure processed meat and are linked to cancer risk. Automatic near-zero score.' },
+    { re: /\b(sodium|potassium) nitrate|\bnitrate|\be ?25[23]\b/, kind: 'severe', pts: 40, cap: 10, label: 'Nitrate (curing agent)', why: 'Nitrates convert to nitrites in cured meats.' },
+
+    // ---- Artificial sweeteners ----
+    { re: /aspartame|sucralose|acesulfame|saccharin|cyclamate|neotame|advantame|\be ?95[0-9]\b|\be ?96[0-9]\b/, kind: 'cosmetic', pts: 25, cap: 30, label: 'Artificial sweetener', why: 'Lab-made sweetener with no place in a whole-food kitchen.' },
+    { re: /steviol|stevia|\be ?960\b|sorbitol|maltitol|xylitol|erythritol|isomalt|\be ?420\b|\be ?421\b|\be ?953\b|\be ?965\b|\be ?967\b|\be ?968\b/, kind: 'cosmetic', pts: 15, label: 'Sweetener / polyol', why: 'Industrial sweetener used to replace sugar.' },
+
+    // ---- Colours ----
+    { re: /caramel colou?r|\be ?150[a-d]\b|plain caramel|ammonia caramel|sulphite ammonia caramel/, kind: 'cosmetic', pts: 20, label: 'Caramel colour', why: 'Added purely to change appearance.' },
+    { re: /tartrazine|sunset yellow|quinoline|carmoisine|azorubine|ponceau|allura|brilliant blue|indigo carmine|patent blue|erythrosine|titanium dioxide|\be ?1(0[24]|1[0-2]|2[0-9]|3[0-3]|4[23]|5[1-5])\b|\be ?171\b|\be ?18[0-2]\b/, kind: 'cosmetic', pts: 22, label: 'Artificial colour', why: 'Synthetic colouring, some linked to hyperactivity in children.' },
+    { re: /paprika extract|beta.?carotene|carotene|annatto|curcumin|turmeric extract|beetroot red|anthocyanin|chlorophyll|lutein|lycopene|riboflavin|spirulina|\be ?1(00|01|40|41|60[a-f]?|61[a-z]?|62|63)\b/, kind: 'additive', pts: 2, label: 'Natural colour', why: 'Colour from a natural source — mild, but still added for looks.' },
+    { re: /\bcolou?rs?\b|\bcolou?ring\b/, kind: 'cosmetic', pts: 12, label: 'Colouring', why: 'Added to change appearance.' },
+
+    // ---- Flavourings & enhancers ----
+    { re: /monosodium glutamate|\bmsg\b|\be ?62[0-5]\b|\be ?6(2[6-9]|3[0-5])\b|disodium (inosinate|guanylate|ribonucleotides)|flavou?r enhancer/, kind: 'cosmetic', pts: 18, label: 'Flavour enhancer', why: 'Engineered to make food more moreish than it naturally is.' },
+    { re: /yeast extract|hydroly[sz]ed (vegetable |soy|soya|wheat |corn |maize )?protein|autolysed yeast/, kind: 'marker', pts: 8, label: 'Yeast extract / hydrolysed protein', why: 'Hidden glutamate flavour booster — a classic ultra-processed marker.' },
+    { re: /smoke flavou?r|liquid smoke/, kind: 'marker', pts: 8, label: 'Smoke flavouring', why: 'Flavour added industrially rather than by smoking.' },
+    { re: /natural .{0,15}flavou?r|flavou?rings?|aromas?\b|\bflavou?rs?\b/, kind: 'marker', pts: 10, label: 'Flavouring', why: 'Flavour made in a lab or factory to imitate or boost real food.' },
+
+    // ---- Sugars / syrups (UPF markers) ----
+    { re: /glucose.?fructose|fructose.?glucose|high fructose|corn syrup|glucose syrup|invert(ed)? sugar|golden syrup|rice syrup|isoglucose|sugar syrup|caramelised sugar syrup/, kind: 'marker', pts: 12, label: 'Industrial syrup', why: 'Refined syrup — a hallmark of ultra-processed food.' },
+    { re: /\bdextrose\b|maltodextrin|\bglucose\b|\bfructose\b|\bmaltose\b|polydextrose|oligofructose|dextrin/, kind: 'marker', pts: 8, label: 'Refined sugar derivative', why: 'Industrially extracted sugar, rarely used at home.' },
+    { re: /cane sugar|beet sugar|brown sugar|caster sugar|icing sugar|demerara|muscovado|\bsugars?\b/, kind: 'refined', pts: 8, label: 'Sugar', why: 'Refined sugar.' },
+    { re: /\bhoney\b|maple syrup|date syrup|agave|molasses|treacle|coconut sugar/, kind: 'minimal', pts: 3, label: 'Natural sweetener', why: 'Less refined, but still added sweetness.' },
+
+    // ---- Fats ----
+    { re: /hydrogenated|interesterified|shortening|margarine/, kind: 'marker', pts: 15, label: 'Hydrogenated / industrial fat', why: 'Chemically altered fat — strongly ultra-processed.' },
+    { re: /palm (fat|oil|kernel|stearin|olein)|\bpalm\b|vegetable fats?\b/, kind: 'refined', pts: 6, label: 'Palm / vegetable fat', why: 'Industrially refined fat.' },
+    { re: /extra.?virgin|cold.?pressed|virgin olive|olive oil/, kind: 'minimal', pts: 1, label: 'Olive oil', why: 'Minimally pressed oil.' },
+    { re: /rapeseed|canola|sunflower( seed)? oil|soya ?bean oil|soybean oil|soya oil|corn oil|maize oil|cottonseed|vegetable oils?|\boils?\b|coconut oil|groundnut oil|peanut oil|safflower|rice bran oil/, kind: 'refined', pts: 3, label: 'Refined seed oil', why: 'Refined, solvent-extracted seed oil.' },
+
+    // ---- Proteins, powders, isolates ----
+    { re: /protein isolate|protein concentrate|isolated (soy|soya|pea|whey)|soy(a)? protein|pea protein|wheat protein|textured|mycoprotein|collagen|gelatine?/, kind: 'marker', pts: 10, label: 'Protein isolate', why: 'Industrially extracted protein — a common ultra-processed building block.' },
+    { re: /mechanically (separated|recovered)/, kind: 'marker', pts: 15, label: 'Mechanically separated meat', why: 'Meat paste stripped from bones by machine.' },
+    { re: /whey|milk powder|skimmed milk powder|dried milk|milk solids|lactose|caseinate|milk protein|buttermilk powder|cream powder|cheese powder|egg powder|dried egg|dried whole egg/, kind: 'refined', pts: 4, label: 'Dried / fractioned dairy', why: 'Dairy broken into parts or powdered for industrial use.' },
+
+    // ---- Starches & flours ----
+    { re: /modified (maize |corn |potato |tapioca |wheat )?starch|\be ?14\d\d\b/, kind: 'marker', pts: 10, label: 'Modified starch', why: 'Chemically modified starch used for texture.' },
+    { re: /wholemeal|whole ?grain|whole ?wheat|wholewheat|spelt|rye|oat|buckwheat|whole ?meal|stoneground/, kind: 'minimal', pts: 1, label: 'Whole grain', why: 'Whole grain — minimally processed.' },
+    { re: /flour|semolina|rusk|breadcrumb|crumb|couscous|pasta|noodles|bulgur/, kind: 'refined', pts: 3, label: 'Refined flour / grain', why: 'Milled and refined grain.' },
+    { re: /starch|cornflour/, kind: 'refined', pts: 4, label: 'Starch', why: 'Extracted starch.' },
+    { re: /\bfibre\b|\bfiber\b|inulin|chicory root|psyllium|oat fibre|wheat fibre|bamboo fibre|citrus fibre|pea fibre/, kind: 'marker', pts: 6, label: 'Added fibre', why: 'Isolated fibre added back to processed food.' },
+
+    // ---- Emulsifiers, stabilisers, thickeners, gums ----
+    { re: /carrageenan|\be ?407a?\b|carboxymethyl|cellulose gum|\be ?466\b|polysorbate|\be ?43[2-6]\b|\be ?47[1-9]\b|\be ?48[1-2]\b|mono.? ?and di.?glycerides|monoglyceride|diglyceride|sucrose esters|polyglycerol|stearoyl lactylate|\be ?49[1-5]\b/, kind: 'cosmetic', pts: 14, label: 'Industrial emulsifier', why: 'Synthetic emulsifier — linked to gut-lining disruption in studies.' },
+    { re: /lecithin|\be ?322\b/, kind: 'additive', pts: 4, label: 'Lecithin', why: 'Mild emulsifier, usually from soy or sunflower.' },
+    { re: /xanthan|guar|locust bean|carob gum|gum arabic|acacia gum|gellan|tara gum|konjac|agar|alginate|methylcellulose|cellulose|\be ?4(0[0-6]|1[0-8]|2[0-5]|6[0-9])\b/, kind: 'additive', pts: 7, label: 'Gum / thickener', why: 'Thickener or gelling agent used to fake texture.' },
+    { re: /pectin|\be ?440\b/, kind: 'additive', pts: 2, label: 'Pectin', why: 'Natural fruit-derived setting agent.' },
+
+    // ---- Preservatives ----
+    { re: /sulphite|sulfite|metabisulphite|metabisulfite|sulphur dioxide|sulfur dioxide|\be ?22[0-8]\b/, kind: 'additive', pts: 12, label: 'Sulphite preservative', why: 'Chemical preservative; can trigger sensitivities.' },
+    { re: /benzoate|benzoic|\be ?21[0-3]\b|sorbate|sorbic acid|\be ?20[0-3]\b|propionate|\be ?28[0-3]\b|\bbha\b|\bbht\b|butylated|\be ?3(19|2[0-1])\b|\bedta\b|\be ?385\b|natamycin|nisin|\be ?23[45]\b/, kind: 'additive', pts: 12, label: 'Chemical preservative', why: 'Added to extend shelf life far beyond real food.' },
+    { re: /phosphoric acid|\be ?338\b|polyphosphate|triphosphate|\be ?45[12]\b|\be ?34[0-3]\b|\be ?339\b/, kind: 'additive', pts: 9, label: 'Phosphate additive', why: 'Industrial phosphate — used for texture, water retention or acidity.' },
+    { re: /diphosphate|pyrophosphate|\be ?450\b/, kind: 'additive', pts: 4, label: 'Diphosphate', why: 'Raising agent / stabiliser.' },
+
+    // ---- Mild / benign additives ----
+    { re: /ascorbic acid|ascorbate|vitamin c|\be ?30[0-2]\b|tocopherol|vitamin e|\be ?30[6-9]\b|rosemary extract|\be ?392\b/, kind: 'additive', pts: 2, label: 'Antioxidant (vitamin)', why: 'Vitamin C/E used as an antioxidant — fairly benign.' },
+    { re: /citric acid|\be ?330\b|lactic acid|\be ?270\b|malic acid|\be ?296\b|tartaric|\be ?334\b|acetic acid|\be ?260\b|citrate|\be ?33[1-3]\b|lactate|\be ?32[5-7]\b|acetate|\be ?26[1-3]\b|fumaric|\be ?297\b/, kind: 'additive', pts: 2, label: 'Food acid', why: 'Acid used for tartness or preservation — mild.' },
+    { re: /sodium bicarbonate|bicarbonate of soda|baking soda|sodium carbonate|ammonium (bi)?carbonate|potassium carbonate|calcium carbonate|\be ?50[0-4]\b|\be ?170\b|cream of tartar/, kind: 'additive', pts: 1, label: 'Raising agent', why: 'Simple mineral raising agent.' },
+    { re: /calcium chloride|\be ?509\b|calcium sulphate|\be ?516\b|magnesium chloride|\be ?511\b|nitrogen|\be ?941\b|carbon dioxide|\be ?290\b|argon|\be ?938\b|oxygen|\be ?948\b|\bhelium\b/, kind: 'additive', pts: 1, label: 'Mineral / packaging gas', why: 'Very mild processing aid.' },
+    { re: /caffeine/, kind: 'additive', pts: 5, label: 'Added caffeine', why: 'Caffeine added rather than naturally present.' },
+    { re: /vitamin|thiamin|niacin|folic|iron\b|calcium\b|zinc|iodine|\bb12\b|\bd2\b|\bd3\b|fortified|mineral/, kind: 'additive', pts: 1, label: 'Added vitamin / mineral', why: 'Fortification — not harmful, but a sign of processing.' },
+    { re: /\bacidity regulator|\bemulsifiers?\b|\bstabili[sz]ers?\b|\bthickeners?\b|\bpreservatives?\b|\bantioxidants?\b|\bgelling agent|\bhumectant|\banti.?caking|\bglazing agent|\bfirming agent|\bbulking agent|\bcarrier\b|\bsequestrant|\bfoaming agent/, kind: 'additive', pts: 8, label: 'Industrial additive', why: 'Functional additive with no home-kitchen equivalent.' },
+    { re: /raising agents?|leavening/, kind: 'additive', pts: 1, label: 'Raising agent', why: 'Raising agent.' },
+    { re: /\be ?\d{3,4}[a-z]?\b/, kind: 'additive', pts: 8, label: 'E-number additive', why: 'Food additive.' },
+
+    // ---- Minimally processed / traditional ----
+    { re: /vinegar|cultures?|rennet|enzymes?|\byeast\b|sourdough|starter|ferment/, kind: 'minimal', pts: 1, label: 'Traditional ingredient', why: 'Traditional processing aid.' },
+    { re: /cheese|yogh?urt|kefir|cr[eè]me fra[iî]che|soured cream|quark|ricotta|mozzarella|cheddar|parmesan|feta|halloumi/, kind: 'minimal', pts: 1, label: 'Fermented dairy', why: 'Traditional fermented dairy.' },
+    { re: /chocolate|cocoa|cacao/, kind: 'minimal', pts: 2, label: 'Cocoa / chocolate', why: 'Processed from cocoa beans.' },
+    { re: /\bjuice\b|pur[eé]e|paste|concentrate|dried|powder|extract|stock|bouillon|broth|sauce/, kind: 'minimal', pts: 2, label: 'Processed form', why: 'A processed version of a whole food.' },
+    { re: /\bbacon\b|\bham\b|salami|chorizo|pepperoni|sausage|frankfurter|hot dog|luncheon|corned/, kind: 'refined', pts: 10, label: 'Processed meat', why: 'Processed meat ingredient.' },
+
+    // ---- Whole foods (zero penalty) ----
+    { re: /\bwater\b|sea salt|rock salt|\bsalt\b|himalayan|mineral water|spring water|\bice\b/, kind: 'whole', pts: 0, label: 'Water / salt', why: 'Pure.' },
+    { re: /\bmilk\b|\bcream\b|\bbutter\b|\beggs?\b|\bghee\b/, kind: 'whole', pts: 0, label: 'Dairy / egg', why: 'Whole food.' },
+    { re: /\b(beef|pork|lamb|mutton|chicken|turkey|duck|goose|venison|veal|rabbit|goat|meat|liver|kidney|mince|steak|fillet|pancetta|offal|casing)s?\b/, kind: 'whole', pts: 0, label: 'Meat', why: 'Whole food.' },
+    { re: /\b(fish|cod|haddock|salmon|tuna|mackerel|sardines?|anchov(y|ies)|pollock|plaice|hake|trout|herring|sole|seabass|sea bass|bream|prawns?|shrimps?|crab|lobster|mussels?|clams?|oysters?|scallops?|squid|octopus|kipper)\b/, kind: 'whole', pts: 0, label: 'Fish / seafood', why: 'Whole food.' },
+    { re: /\b(apples?|bananas?|oranges?|lemons?|limes?|grapes?|pears?|peach(es)?|plums?|cherr(y|ies)|berr(y|ies)|strawberr(y|ies)|raspberr(y|ies)|blueberr(y|ies)|blackcurrants?|mango(es)?|pineapples?|apricots?|figs?|dates?|raisins?|sultanas?|currants?|melons?|kiwi|coconut|pomegranate|rhubarb|cranberr(y|ies)|fruit)\b/, kind: 'whole', pts: 0, label: 'Fruit', why: 'Whole food.' },
+    { re: /\b(tomato(es)?|potato(es)?|onions?|garlic|carrots?|peppers?|chill?i(es)?|celery|leeks?|cabbage|kale|spinach|lettuce|broccoli|cauliflower|peas|beans?|lentils?|chickpeas?|sweetcorn|corn|maize|mushrooms?|courgettes?|aubergines?|cucumbers?|beetroot|parsnips?|swede|squash|pumpkin|shallots?|spring onions?|olives?|capers?|gherkins?|vegetables?|herbs?|basil|oregano|thyme|rosemary|parsley|coriander|mint|dill|sage|bay|chives|ginger|spices?|pepper|paprika|cumin|cinnamon|nutmeg|cloves?|cardamom|turmeric|mustard|seeds?|vanilla|saffron|fennel)\b/, kind: 'whole', pts: 0, label: 'Vegetable / herb / spice', why: 'Whole food.' },
+    { re: /\b(rice|oats?|barley|quinoa|millet|wheat|nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pistachios?|peanuts?|pecans?|macadamia|brazil|sesame|linseed|flaxseed|chia|sunflower seeds?|pumpkin seeds?|tofu|soya ?beans?|soybeans?|edamame|tempeh)\b/, kind: 'whole', pts: 0, label: 'Grain / nut / legume', why: 'Whole food.' },
+    { re: /\b(coffee|tea|green tea|black tea|rooibos|matcha|hops|malted barley|cocoa beans)\b/, kind: 'whole', pts: 0, label: 'Coffee / tea', why: 'Whole food.' },
+  ];
+
+  // Ingredient names that are just category headers when they have sub-ingredients
+  const PARENT_ONLY = /seasoning|spice mix|batter|coating|crumb|rusk|filling|topping|sauce|dressing|marinade|glaze|raising agents?|emulsifiers?|stabili[sz]ers?|preservatives?|antioxidants?|acidity regulators?|thickeners?|colou?rs?|flavou?r enhancers?|sweeteners?|gelling agents?|chocolate|pastry|dough|pasta|stock|crumb|base|mix/;
+
+  const KIND_INFO = {
+    whole:    { name: 'Whole food',        tone: 'good' },
+    minimal:  { name: 'Minimally processed', tone: 'ok' },
+    refined:  { name: 'Refined',            tone: 'meh' },
+    additive: { name: 'Additive',           tone: 'meh' },
+    marker:   { name: 'Ultra-processed marker', tone: 'bad' },
+    cosmetic: { name: 'Cosmetic additive',  tone: 'bad' },
+    severe:   { name: 'Severe',             tone: 'worst' },
+    unknown:  { name: 'Unclassified',       tone: 'meh' },
+  };
+
+  // ---------- Parsing ----------
+  function cleanName(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\*+/g, '')
+      .replace(/\d+([.,]\d+)?\s*%/g, '')        // percentages
+      .replace(/\b(organic|british|irish|scottish|uk|eu|fresh|freshly|from concentrate|contains|ingredients?|may contain.*$|in varying proportions|min\.?|minimum)\b/g, ' ')
+      .replace(/^[\s:;.\-–]+|[\s:;.\-–]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Split on top-level commas/semicolons and capture (...) / [...] as children.
+  function parseIngredientsText(text) {
+    if (!text) return [];
+    let t = String(text)
+      .replace(/^\s*ingredients?\s*[:\-]/i, '')
+      .replace(/allergy advice.*$/is, '')
+      .replace(/for allergens.*$/is, '')
+      .replace(/\.\s*(may contain|contains|made in a factory).*$/is, '')
+      .replace(/[{\[]/g, '(').replace(/[}\]]/g, ')')
+      .replace(/\(\s*(min\.?\s*)?\d+([.,]\d+)?\s*%\s*\)/gi, '')
+      .replace(/\band\b(?=[^()]*$)/gi, ',');
+
+    // Separate text outside brackets from every top-level (...) group inside
+    function splitGroups(str) {
+      let depth = 0, outside = '', cur = '', groups = [];
+      for (const c of str) {
+        if (c === '(') { if (depth === 0) { cur = ''; depth++; continue; } depth++; }
+        else if (c === ')') { depth--; if (depth === 0) { groups.push(cur); continue; } if (depth < 0) depth = 0; }
+        if (depth > 0) cur += c; else outside += c;
+      }
+      if (depth > 0) groups.push(cur);
+      groups = groups.filter(function (g) { return g.trim(); });
+      return groups.length ? { outside: outside, groups: groups } : null;
+    }
+
+    function parseList(str) {
+      const out = [];
+      let depth = 0, buf = '', i = 0;
+      const items = [];
+      for (; i < str.length; i++) {
+        const c = str[i];
+        if (c === '(') depth++;
+        if (c === ')') depth = Math.max(0, depth - 1);
+        if ((c === ',' || c === ';' || (c === '.' && depth === 0 && /\s|$/.test(str[i + 1] || ''))) && depth === 0) {
+          items.push(buf); buf = '';
+        } else buf += c;
+      }
+      items.push(buf);
+      for (const raw of items) {
+        const m = splitGroups(raw);
+        if (m) {
+          const name = cleanName(m.outside);
+          const children = [].concat.apply([], m.groups.map(parseList));
+          // "Raising agent: E500" style handled below; "(milk)" allergen-only children kept as children
+          if (name) out.push({ name, raw: raw.trim(), children });
+          else out.push(...children);
+        } else {
+          let r = raw;
+          // "Emulsifier: Soya Lecithin" -> parent with child
+          const colon = r.match(/^([^:]{2,40}):\s*(.+)$/);
+          if (colon) {
+            const kids = parseList(colon[2]);
+            out.push({ name: cleanName(colon[1]), raw: r.trim(), children: kids });
+            continue;
+          }
+          const name = cleanName(r);
+          if (name && name.length > 1) out.push({ name, raw: r.trim(), children: [] });
+        }
+      }
+      return out;
+    }
+    return parseList(t);
+  }
+
+  // Open Food Facts structured ingredients -> same tree shape
+  function fromOFFIngredients(list) {
+    return (list || []).map(function (ing) {
+      const label = ing.text || (ing.id || '').replace(/^[a-z]{2}:/, '').replace(/-/g, ' ');
+      return { name: cleanName(label), raw: label, children: fromOFFIngredients(ing.ingredients) };
+    }).filter(function (x) { return x.name; });
+  }
+
+  // ---------- Classification ----------
+  function classify(name) {
+    for (const rule of RULES) {
+      if (rule.re.test(name)) return rule;
+    }
+    return null;
+  }
+
+  // Flatten tree into scored leaves, keeping parents only when they mean something on their own.
+  function flatten(tree, depth, out, parentName) {
+    tree.forEach(function (node) {
+      const kids = node.children || [];
+      // Allergen-only children like "Butter (Milk)" or "Wheat Flour (Wheat)" — treat as leaf
+      const allergenOnly = kids.length > 0 && kids.every(function (k) {
+        return /^(milk|wheat|egg|eggs|soya|soy|fish|mustard|celery|sesame|barley|oats?|gluten|nuts?|crustaceans?|molluscs?|lupin|peanuts?|cows'? milk|from milk|contains milk)$/.test(k.name);
+      });
+      if (kids.length && !allergenOnly) {
+        const rule = classify(node.name);
+        // Keep parent if it's a meaningful ingredient itself (e.g. "milk chocolate" adds cocoa) — but avoid double counting
+        if (!PARENT_ONLY.test(node.name) && rule && rule.kind !== 'whole' && rule.kind !== 'minimal') {
+          out.push({ name: node.name, depth: depth, rule: rule, parent: parentName, isGroup: true });
+        }
+        out.push({ name: node.name, depth: depth, header: true, parent: parentName });
+        flatten(kids, depth + 1, out, node.name);
+      } else {
+        out.push({ name: node.name, depth: depth, rule: classify(node.name), parent: parentName });
+      }
+    });
+    return out;
+  }
+
+  // ---------- Scoring ----------
+  function band(score) {
+    if (score >= 90) return { key: 'pure', label: 'Pure', blurb: 'As close to the real thing as it gets.' };
+    if (score >= 70) return { key: 'light', label: 'Lightly processed', blurb: 'Mostly real food with a little help.' };
+    if (score >= 45) return { key: 'processed', label: 'Processed', blurb: 'Real food in there, but plenty has been done to it.' };
+    if (score >= 20) return { key: 'upf', label: 'Ultra-processed', blurb: 'More factory than kitchen.' };
+    return { key: 'avoid', label: 'Avoid', blurb: 'Heavily ultra-processed.' };
+  }
+
+  /**
+   * score({ ingredientsText, ingredientsTree, additives, nova, categories, name })
+   */
+  function score(input) {
+    input = input || {};
+    let tree = input.ingredientsTree && input.ingredientsTree.length ? input.ingredientsTree : parseIngredientsText(input.ingredientsText);
+    const notes = [];
+
+    // No ingredients: is it a whole food with nothing to declare?
+    if (!tree.length) {
+      const cats = (input.categories || []).join(' ');
+      const nm = cleanName(input.name || '');
+      const singleRule = nm ? classify(nm) : null;
+      if (input.nova === 1 || /fresh|fruits?|vegetables?|plant-based-foods-and-beverages.*fruit/.test(cats) || (singleRule && singleRule.kind === 'whole' && nm.split(' ').length <= 3)) {
+        return { score: 100, band: band(100), items: [], flags: [], notes: ['No ingredients list — treated as a single whole food.'], confidence: 'medium', leafCount: 1 };
+      }
+      return { score: null, band: null, items: [], flags: [], notes: ['No ingredients list available for this product.'], confidence: 'none', leafCount: 0 };
+    }
+
+    const flat = flatten(tree, 0, [], null);
+    const leaves = flat.filter(function (x) { return !x.header; });
+    const scoredLeaves = leaves.filter(function (x) { return !x.isGroup; });
+
+    // Pick up additives OFF detected that the text didn't spell out (e.g. foreign-language labels)
+    const seen = leaves.map(function (l) { return l.name; }).join(' | ');
+    (input.additives || []).forEach(function (tag) {
+      const code = String(tag).replace(/^[a-z]{2}:/, '').toLowerCase(); // e.g. e450i
+      const num = code.replace(/^e/, '').replace(/[a-z]+$/, '');
+      if (!new RegExp('\\be ?' + num).test(seen)) {
+        const nm = 'e' + num;
+        const r = classify(nm);
+        if (r && r.kind !== 'whole') {
+          // Only add if no named equivalent is obviously present
+          const dup = leaves.some(function (l) { return l.rule && l.rule.label === r.label; });
+          if (!dup) leaves.push({ name: code.toUpperCase(), depth: 0, rule: r, fromTags: true });
+        }
+      }
+    });
+
+    let penalty = 0;
+    let cap = 100;
+    let markerCount = 0;
+    const items = [];
+    let pos = 0;
+
+    leaves.forEach(function (leaf) {
+      const r = leaf.rule;
+      let pts, kind, label, why;
+      if (r) { pts = r.pts; kind = r.kind; label = r.label; why = r.why; if (r.cap != null) cap = Math.min(cap, r.cap); }
+      else { pts = 3; kind = 'unknown'; label = 'Unclassified'; why = 'Not in the ingredient library — scored as mildly processed.'; }
+
+      // Earlier (top-level) ingredients make up more of the product
+      let weight = 1;
+      if (leaf.depth === 0 && !leaf.fromTags) {
+        weight = pos === 0 ? 1.5 : pos === 1 ? 1.3 : pos === 2 ? 1.15 : 1;
+        pos++;
+      } else if (leaf.depth > 0) {
+        weight = 0.9;
+      }
+      // A product that is mostly sugar/syrup is a sweet, not a food
+      if (leaf.depth === 0 && pos <= 2 && r && /Sugar|syrup|Refined sugar/i.test(r.label)) weight *= 1.5;
+      if (kind === 'severe' || kind === 'cosmetic') weight = Math.max(weight, 1); // never discount these
+      if (leaf.isGroup) weight *= 0.5;
+
+      const p = Math.round(pts * weight * 10) / 10;
+      penalty += p;
+      if (kind === 'marker' || kind === 'cosmetic' || kind === 'severe') markerCount++;
+      items.push({ name: leaf.name, depth: leaf.depth, parent: leaf.parent || null, kind: kind, kindName: KIND_INFO[kind].name, tone: KIND_INFO[kind].tone, label: label, why: why, penalty: p, fromTags: !!leaf.fromTags, isGroup: !!leaf.isGroup });
+    });
+
+    // Complexity: every extra ingredient moves it further from "the pure thing"
+    const n = Math.max(1, scoredLeaves.length);
+    const complexity = Math.min(12, Math.round((n - 1) * 0.75));
+    penalty += complexity;
+    if (complexity > 0) notes.push(n + ' ingredients (−' + complexity + ' for complexity)');
+
+    // Stacking: several UPF markers together signal a formulated product
+    if (markerCount >= 2) {
+      const stack = Math.min(24, (markerCount - 1) * 6);
+      penalty += stack;
+      notes.push(markerCount + ' ultra-processed markers together (−' + stack + ')');
+    }
+
+    let s = Math.round(100 - penalty);
+    if (s > cap) { s = cap; notes.push('Capped at ' + cap + ' because of ' + items.filter(function (i) { return i.kind === 'severe' || (i.label === 'Artificial sweetener'); }).map(function (i) { return i.label.toLowerCase(); })[0]); }
+    s = Math.max(0, Math.min(100, s));
+
+    const flags = items.filter(function (i) { return i.tone === 'bad' || i.tone === 'worst'; });
+    return { score: s, band: band(s), items: items, flags: flags, notes: notes, confidence: 'high', leafCount: n, nova: input.nova || null };
+  }
+
+  const api = { score: score, parseIngredientsText: parseIngredientsText, fromOFFIngredients: fromOFFIngredients, band: band, classify: classify };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.Purity = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const OFF = 'https://world.openfoodfacts.org';
+  const FIELDS = 'product_name,product_name_en,generic_name,brands,quantity,image_front_small_url,image_front_url,ingredients_text,ingredients_text_en,ingredients,additives_tags,nova_group,categories_tags,code';
+  const COLORS = {pure:'#2e8b57', light:'#7cb342', processed:'#e8a33a', upf:'#e4572e', avoid:'#b3261e'};
+  const colorFor = s => s == null ? '#999' : s >= 90 ? COLORS.pure : s >= 70 ? COLORS.light : s >= 45 ? COLORS.processed : s >= 20 ? COLORS.upf : COLORS.avoid;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // ---------- Storage (best effort) ----------
+  const store = {
+    get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+    set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  };
+  let history = store.get('purely.history', []);
+
+  // ---------- UI helpers ----------
+  let toastT;
+  function toast(msg, ms){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms || 2600); }
+  function show(view){
+    $('home').style.display = view === 'home' ? 'block' : 'none';
+    $('result').style.display = view === 'result' ? 'block' : 'none';
+    $('loading').style.display = view === 'loading' ? 'block' : 'none';
+    window.scrollTo(0, 0);
+  }
+  function openSheet(id){ $(id).style.display = 'flex'; const f = $(id).querySelector('input:not([type=hidden]),textarea'); if (f) setTimeout(() => f.focus(), 50); }
+  function closeSheets(){ document.querySelectorAll('.sheet-bg').forEach(s => s.style.display = 'none'); }
+  document.querySelectorAll('.sheet-bg').forEach(bg => {
+    bg.addEventListener('click', e => { if (e.target === bg || e.target.hasAttribute('data-close')) closeSheets(); });
+  });
+
+  // Examples on the scale
+  const EX = [['Apple',100],['Milk',100],['Butter',99],['Tinned tomatoes',94],['Sourdough',92],['Battered fish',45],['Cola',35],['Supermarket bread',22],['Cured sausage',0]];
+  $('examples').innerHTML = EX.map(([n,s]) => `<span class="ex"><b style="color:${colorFor(s)}">${s}</b>${esc(n)}</span>`).join('');
+
+  function renderHistory(){
+    const h = $('history');
+    if (!history.length){ h.innerHTML = '<div class="empty">Nothing scanned yet. Start with something from the cupboard.</div>'; return; }
+    h.innerHTML = history.slice(0, 30).map((it, i) => `
+      <button class="hist-item" data-i="${i}">
+        <span class="pill" style="background:${colorFor(it.score)}">${it.score == null ? '?' : it.score}</span>
+        <span class="t"><div class="n">${esc(it.name || 'Unnamed product')}</div><div class="s">${esc([it.brand, it.band].filter(Boolean).join(' · '))}</div></span>
+      </button>`).join('') + '<button class="link-btn" id="clearHist">Clear history</button>';
+    h.querySelectorAll('.hist-item').forEach(b => b.addEventListener('click', () => {
+      const it = history[+b.dataset.i];
+      if (it.product) renderResult(it.product, it.code, true);
+      else if (it.code) lookup(it.code);
+    }));
+    $('clearHist').addEventListener('click', () => { history = []; store.set('purely.history', history); renderHistory(); });
+  }
+
+  function saveHistory(entry){
+    history = history.filter(h => !(entry.code && h.code === entry.code) && !(!entry.code && h.name === entry.name));
+    history.unshift(entry);
+    history = history.slice(0, 50);
+    store.set('purely.history', history);
+  }
+
+  // ---------- Lookup ----------
+  async function lookup(code){
+    code = String(code).replace(/\D/g, '');
+    if (code.length < 6){ toast('That barcode looks too short'); return; }
+    show('loading'); $('loadingText').textContent = 'Looking up ' + code + '…';
+    let data;
+    try {
+      const res = await fetch(`${OFF}/api/v2/product/${code}.json?fields=${FIELDS}`);
+      data = await res.json();
+    } catch (e) {
+      show('home');
+      toast("Couldn't reach the food database. You can paste the ingredients instead.", 4000);
+      $('pasteCode').value = code; openSheet('pasteSheet');
+      return;
+    }
+    if (!data || data.status !== 1 || !data.product){
+      show('home');
+      toast('Not in the database yet — paste the ingredients to score it.', 4000);
+      $('pasteCode').value = code; $('pasteName').value = ''; $('pasteText').value = '';
+      openSheet('pasteSheet');
+      return;
+    }
+    renderResult(data.product, code);
+  }
+
+  function productInput(p){
+    const textEn = p.ingredients_text_en;
+    const text = textEn || p.ingredients_text || '';
+    // If there's no English text but structured ingredients exist, use OFF's normalised (English) ingredient ids
+    let tree = null;
+    if (!textEn && p.ingredients && p.ingredients.length) {
+      tree = Purity.fromOFFIngredients(p.ingredients.map(i => Object.assign({}, i, { text: (i.id || '').startsWith('en:') ? i.id.slice(3).replace(/-/g, ' ') : i.text })));
+    }
+    return {
+      name: p.product_name_en || p.product_name || p.generic_name || '',
+      ingredientsText: text,
+      ingredientsTree: tree,
+      additives: p.additives_tags || [],
+      nova: p.nova_group ? +p.nova_group : null,
+      categories: p.categories_tags || []
+    };
+  }
+
+  function renderResult(p, code, fromHistory){
+    const input = productInput(p);
+    const r = Purity.score(input);
+    const name = input.name || 'Unnamed product';
+    const brand = (p.brands || '').split(',')[0].trim();
+
+    $('rName').textContent = name;
+    $('rBrand').textContent = [brand, p.quantity].filter(Boolean).join(' · ') || (code ? 'Barcode ' + code : 'Your ingredients');
+    const img = $('rImg');
+    const src = p.image_front_small_url || p.image_front_url;
+    if (src){ img.hidden = false; img.onerror = () => { img.hidden = true; }; img.src = src; } else img.hidden = true;
+
+    const arc = $('rArc'); const C = 326.7;
+    arc.style.stroke = colorFor(r.score);
+    arc.style.strokeDashoffset = C;
+    requestAnimationFrame(() => requestAnimationFrame(() => { arc.style.strokeDashoffset = r.score == null ? C : C * (1 - r.score / 100); }));
+    animateNumber($('rScore'), r.score);
+    $('rScore').style.color = colorFor(r.score);
+    $('rLabel').textContent = r.band ? r.band.label : 'Not enough data';
+    $('rLabel').style.color = colorFor(r.score);
+    $('rBlurb').textContent = r.band ? r.band.blurb : 'There is no ingredients list for this product. Paste it from the pack to score it.';
+
+    const chips = [];
+    if (r.leafCount) chips.push(r.leafCount + (r.leafCount === 1 ? ' ingredient' : ' ingredients'));
+    if (r.flags.length) chips.push(r.flags.length + ' red flag' + (r.flags.length > 1 ? 's' : ''));
+    if (r.nova) chips.push('NOVA ' + r.nova);
+    $('rChips').innerHTML = chips.map(c => `<span class="chip">${esc(c)}</span>`).join('');
+
+    $('rWhy').innerHTML = r.notes.length ? '<ul>' + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + '</ul>' : '';
+    $('rWhy').style.display = r.notes.length ? 'block' : 'none';
+
+    // Flags: group by label
+    const groups = {};
+    r.flags.forEach(f => { (groups[f.label] = groups[f.label] || { f, names: [], pts: 0 }); groups[f.label].names.push(f.name); groups[f.label].pts += f.penalty; });
+    const gl = Object.values(groups).sort((a, b) => b.pts - a.pts);
+    $('flagsSec').style.display = gl.length ? 'block' : 'none';
+    $('rFlags').innerHTML = gl.map(g => `
+      <div class="flag tone-${g.f.tone}"><span class="dot"></span><div><div class="fn">${esc(g.f.label)} <span class="muted small">−${Math.round(g.pts)}</span></div>
+      <div class="fw">${esc(g.names.join(', '))}. ${esc(g.f.why)}</div></div></div>`).join('');
+
+    // Ingredients
+    $('ingSec').style.display = r.items.length ? 'block' : 'none';
+    $('rIngs').innerHTML = r.items.map(it => `
+      <div class="ing tone-${it.tone}${it.depth > 0 ? ' sub' : ''}" title="${esc(it.why)}">
+        <span class="dot"></span>
+        <div class="in"><div class="iname">${it.parent ? '<span class="muted" style="font-weight:500">' + esc(it.parent) + ' › </span>' : ''}${esc(it.name)}${it.fromTags ? ' <span class="muted small">(detected)</span>' : ''}</div>
+        <div class="ikind">${esc(it.label === it.kindName ? it.label : it.label + ' · ' + it.kindName)}</div></div>
+        <span class="pen">${it.penalty ? '−' + (Math.round(it.penalty * 10) / 10) : '0'}</span>
+      </div>`).join('');
+    const raw = input.ingredientsText;
+    $('rRawWrap').style.display = raw ? 'block' : 'none';
+    $('rRaw').textContent = raw;
+
+    const off = $('offLink');
+    if (code){ off.style.display = 'flex'; off.href = `${OFF}/product/${code}`; } else off.style.display = 'none';
+    $('againBtn').style.gridColumn = code ? '' : '1 / -1';
+
+    if (!fromHistory){
+      saveHistory({ code: code || null, name, brand, score: r.score, band: r.band && r.band.label, product: slim(p), t: Date.now() });
+      renderHistory();
+    }
+    show('result');
+  }
+
+  function slim(p){
+    return { product_name: p.product_name_en || p.product_name, brands: p.brands, quantity: p.quantity, image_front_small_url: p.image_front_small_url,
+      ingredients_text_en: p.ingredients_text_en, ingredients_text: p.ingredients_text_en ? undefined : p.ingredients_text,
+      ingredients: p.ingredients_text_en ? undefined : p.ingredients, additives_tags: p.additives_tags, nova_group: p.nova_group, categories_tags: p.categories_tags };
+  }
+
+  function animateNumber(el, to){
+    if (to == null){ el.textContent = '?'; return; }
+    const start = performance.now(), dur = 800;
+    function step(t){ const k = Math.min(1, (t - start) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+
+  // ---------- Barcode scanning ----------
+  const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+  let stream = null, scanning = false, zxReader = null, detector = null;
+
+  async function getDetector(){
+    if (detector) return detector;
+    if ('BarcodeDetector' in window){
+      try {
+        const supported = await window.BarcodeDetector.getSupportedFormats();
+        const f = FORMATS.filter(x => supported.includes(x));
+        if (f.length){ detector = new window.BarcodeDetector({ formats: f }); return detector; }
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  function loadZXing(){
+    if (window.ZXing) return Promise.resolve(window.ZXing);
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+      s.onload = () => res(window.ZXing); s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  function zxHints(Z){
+    const hints = new Map();
+    hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E]);
+    hints.set(Z.DecodeHintType.TRY_HARDER, true);
+    return hints;
+  }
+
+  function validEAN(code){
+    if (!/^\d{8}$|^\d{12,14}$/.test(code)) return false;
+    const d = code.split('').map(Number), check = d.pop();
+    const sum = d.reverse().reduce((s, n, i) => s + n * (i % 2 === 0 ? 3 : 1), 0);
+    return (10 - (sum % 10)) % 10 === check;
+  }
+
+  function onCode(code){
+    if (!scanning) return;
+    if (!validEAN(code)) return;
+    try { navigator.vibrate && navigator.vibrate(60); } catch (e) {}
+    stopScan();
+    lookup(code);
+  }
+
+  async function startScan(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ cameraFallback(); return; }
+    $('scanner').style.display = 'block'; scanning = true;
+    $('scanHint').textContent = 'Line the barcode up inside the box';
+    const video = $('video');
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    } catch (e) {
+      $('scanner').style.display = 'none'; scanning = false;
+      cameraFallback(e);
+      return;
+    }
+    video.srcObject = stream;
+    try { await video.play(); } catch (e) {}
+
+    // Torch, where supported (mostly Android)
+    try {
+      const track = stream.getVideoTracks()[0];
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.torch){ const tb = $('torchBtn'); tb.style.display = 'block'; let on = false; tb.onclick = () => { on = !on; track.applyConstraints({ advanced: [{ torch: on }] }); }; }
+    } catch (e) {}
+
+    const det = await getDetector();
+    if (det){
+      const loop = async () => {
+        if (!scanning) return;
+        try {
+          if (video.readyState >= 2){
+            const codes = await det.detect(video);
+            if (codes && codes.length){ onCode(codes[0].rawValue); return; }
+          }
+        } catch (e) {}
+        setTimeout(loop, 120);
+      };
+      loop();
+    } else {
+      try {
+        const Z = await loadZXing();
+        zxReader = new Z.BrowserMultiFormatReader(zxHints(Z), 150);
+        zxReader.decodeFromVideoElementContinuously(video, (result) => { if (result) onCode(result.getText()); });
+      } catch (e) {
+        stopScan();
+        toast("Live scanning isn't supported here — try the Photo button.", 4000);
+      }
+    }
+  }
+
+  function stopScan(){
+    scanning = false;
+    try { zxReader && zxReader.reset(); } catch (e) {}
+    zxReader = null;
+    if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+    $('video').srcObject = null;
+    $('scanner').style.display = 'none';
+    $('torchBtn').style.display = 'none';
+  }
+
+  function cameraFallback(err){
+    const denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+    toast(denied ? 'Camera blocked here — snap a photo of the barcode instead.' : 'No live camera — snap a photo of the barcode instead.', 3500);
+    $('photoInput').click();
+  }
+
+  async function decodePhoto(file){
+    if (!file) return;
+    show('loading'); $('loadingText').textContent = 'Reading barcode…';
+    const url = URL.createObjectURL(file);
+    try {
+      const det = await getDetector();
+      if (det){
+        const bmp = await createImageBitmap(file);
+        const codes = await det.detect(bmp);
+        if (codes && codes.length){ URL.revokeObjectURL(url); return lookup(codes[0].rawValue); }
+      }
+      const Z = await loadZXing();
+      const reader = new Z.BrowserMultiFormatReader(zxHints(Z));
+      const img = new Image(); img.src = url; await img.decode();
+      const res = await reader.decodeFromImageElement(img);
+      URL.revokeObjectURL(url);
+      return lookup(res.getText());
+    } catch (e) {
+      URL.revokeObjectURL(url);
+      show('home');
+      toast("Couldn't read a barcode in that photo. Get closer, fill the frame, and keep it sharp.", 4500);
+    }
+  }
+
+  // ---------- Wire up ----------
+  $('scanBtn').addEventListener('click', startScan);
+  $('closeScan').addEventListener('click', stopScan);
+  $('photoInput').addEventListener('change', e => { decodePhoto(e.target.files[0]); e.target.value = ''; });
+  $('typeBtn').addEventListener('click', () => { $('codeInput').value = ''; openSheet('typeSheet'); });
+  $('pasteBtn').addEventListener('click', () => { $('pasteCode').value = ''; $('pasteName').value = ''; $('pasteText').value = ''; openSheet('pasteSheet'); });
+  $('aboutBtn').addEventListener('click', () => openSheet('aboutSheet'));
+  $('homeLogo').addEventListener('click', () => { stopScan(); show('home'); });
+  $('backBtn').addEventListener('click', () => show('home'));
+  $('againBtn').addEventListener('click', () => { show('home'); startScan(); });
+  $('typeForm').addEventListener('submit', e => { e.preventDefault(); const v = $('codeInput').value.trim(); closeSheets(); if (v) lookup(v); });
+  $('pasteForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = $('pasteText').value.trim(), name = $('pasteName').value.trim();
+    if (!text && !name){ toast('Paste some ingredients first'); return; }
+    closeSheets();
+    renderResult({ product_name: name || 'Your product', ingredients_text_en: text }, $('pasteCode').value || null);
+  });
+
+  renderHistory();
+  show('home');
+
+  // Installable app (only where service workers are allowed, e.g. GitHub Pages)
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|anthropic/.test(location.hostname)){
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
