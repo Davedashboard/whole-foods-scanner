@@ -1,8 +1,8 @@
 {
-  "id": "/whole-foods-scanner/",
+  "id": "/whole-foods-scanner/?app=wfs",
   "name": "Whole Food Scanner",
   "short_name": "Whole Food Scanner",
-  "start_url": "/whole-foods-scanner/",
+  "start_url": "/whole-foods-scanner/?app=wfs",
   "scope": "/whole-foods-scanner/",
   "display": "standalone",
   "background_color": "#f5f0e6",
