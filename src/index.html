@@ -119,6 +119,7 @@
   .scanner .laser{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#7cdc8c;box-shadow:0 0 12px #7cdc8c;animation:scan 1.6s ease-in-out infinite}
   @keyframes scan{0%,100%{transform:translateY(-70px)}50%{transform:translateY(70px)}}
   .scanner .hint{position:absolute;left:0;right:0;top:calc(44% + 120px);text-align:center;color:#f5f0e6;font-weight:600;padding:0 24px}
+  .scanner .status{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);text-align:center;color:rgba(245,240,230,.55);font-size:12px}
   .scanner .close{position:absolute;right:18px;top:calc(var(--safe-t) + 18px);width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:24px}
   .scanner .torch{position:absolute;left:18px;top:calc(var(--safe-t) + 18px);height:46px;border-radius:23px;border:0;background:rgba(255,255,255,.18);color:#fff;padding:0 16px;font-weight:600;display:none}
 
@@ -251,6 +252,7 @@
   <div class="hint" id="scanHint">Line the barcode up inside the box</div>
   <button class="close" id="closeScan" aria-label="Close">×</button>
   <button class="torch" id="torchBtn">Torch</button>
+  <div class="status" id="scanStatus"></div>
 </div>
 
 <!-- Type barcode -->
@@ -607,6 +609,8 @@
     $('scanner').style.display = 'block'; scanning = true;
     $('scanHint').textContent = 'Line the barcode up inside the box';
     const video = $('video');
+    let zoomed = false;
+    $('scanStatus').textContent = 'starting camera…';
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
     } catch (e) {
@@ -629,7 +633,18 @@
       if (caps.torch){ const tb = $('torchBtn'); tb.style.display = 'block'; let on = false; tb.onclick = () => { on = !on; track.applyConstraints({ advanced: [{ torch: on }] }).catch(() => {}); }; }
       // Continuous autofocus helps a lot with close-up barcodes
       if (caps.focusMode && caps.focusMode.includes('continuous')) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+      // Most phone main cameras can't focus closer than ~15–20 cm, so held close the bars blur and never read.
+      // A bit of zoom lets you hold the pack further away, where it's sharp.
+      if (caps.zoom && caps.zoom.max >= 1.5){
+        const z = Math.min(2, caps.zoom.max);
+        track.applyConstraints({ advanced: [{ zoom: z }] }).then(() => { zoomed = true; }).catch(() => {});
+      }
     } catch (e) {}
+    const setStatus = () => {
+      const t = stream && stream.getVideoTracks()[0], st = t && t.getSettings ? t.getSettings() : {};
+      $('scanStatus').textContent = [detBroken ? null : 'built-in', zxState === 'ready' ? 'zxing' : zxState === 'loading' ? 'zxing loading' : zxState === 'dead' ? 'zxing failed' : null].filter(Boolean).join(' + ') +
+        (video.videoWidth ? ' · ' + video.videoWidth + '×' + video.videoHeight : ' · no video yet') + (st.zoom ? ' · ' + (Math.round(st.zoom * 10) / 10) + 'x' : '');
+    };
 
     const det = await getDetector();
     let detFails = 0, detBroken = !det, zx = null, zxState = 'idle', tick = 0; // zxState: idle | loading | ready | dead
@@ -676,8 +691,9 @@
         }
         if (Date.now() - started > 12000 && $('scanHint').dataset.tipped !== String(session)){
           $('scanHint').dataset.tipped = String(session);
-          $('scanHint').textContent = 'Hold steady about 15 cm away — tap Torch if it\'s dim';
+          $('scanHint').textContent = (zoomed ? 'Hold steady about 25 cm away' : 'Hold steady about 15 cm away') + ' — tap Torch if it\'s dim';
         }
+        if (tick % 5 === 1) setStatus();
       } catch (e) {}
       setTimeout(loop, zx && (detBroken || tick % 2 === 1) ? 60 : 100);
     };
