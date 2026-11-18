@@ -22,6 +22,16 @@ The rules live in the `RULES` table near the top of the scoring script in `index
 (search for `const RULES`). Each rule is a pattern, a category and a points penalty — change a number,
 re-upload, done.
 
+## Offline food database
+To make lookups instant, the app downloads a UK slice of Open Food Facts onto the phone (IndexedDB) and
+checks it before going online. A GitHub Action (`.github/workflows/build-db.yml`) rebuilds it every Monday
+from the Open Food Facts export using `tools/build-db.js`, and publishes `uk.ndjson.gz` + `meta.json` to the
+`db` branch (force-pushed, so history doesn't grow). Run it any time from **Actions → Build UK food database
+→ Run workflow**. The phone scores ingredients itself, so changing the scoring rules never needs a rebuild.
+
+Lookup order: products you've scanned before → phone database → Open Food Facts API (v3 and v2 in parallel,
+7 s limit).
+
 ## Developing
 - Edit `src/scoring.js` (the rules) or `src/index.html` (the UI), then run `python3 build.py` to rebuild the root `index.html`.
 - `node test.js` prints scores for a set of reference foods so you can check calibration after tweaking.

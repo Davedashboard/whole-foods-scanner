@@ -1,5 +1,5 @@
 // Whole Food Scanner service worker: caches the app shell so it opens instantly and works offline (lookups still need signal).
-const CACHE = 'wfs-v6';
+const CACHE = 'wfs-v7';
 const LIBS = /^https:\/\/(unpkg\.com|cdn\.jsdelivr\.net)\/(npm\/)?@zxing\//;
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-180.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

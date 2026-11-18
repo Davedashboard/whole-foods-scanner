@@ -40,6 +40,7 @@
   .scan-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#f5f0e6;color:var(--brand);border:0;border-radius:16px;padding:18px;font-weight:700;font-size:18px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
   .scan-btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.18)}
   .scan-btn svg{width:26px;height:26px}
+  .hero .dbline{margin:12px 0 0;font-size:12px;opacity:.65;max-width:none;min-height:1em}
   .alt-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
   .alt{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#f5f0e6;border-radius:14px;padding:11px 6px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px}
   .alt svg{width:20px;height:20px;opacity:.9}
@@ -181,6 +182,7 @@
           Ingredients
         </button>
       </div>
+      <p class="dbline" id="dbLine"></p>
     </section>
 
     <section class="scale">
@@ -703,40 +705,165 @@
   }
 
   // ---------- Lookup ----------
+  // 1. Scanned before?  → instant, from the phone.
+  // 2. In the UK database downloaded onto the phone?  → instant, works offline.
+  // 3. Otherwise ask Open Food Facts: v3 and v2 (and the 12/13-digit twin) all at once, first answer wins.
+  // Results from 1 and 2 are shown straight away; the network is still asked quietly for the product photo.
+  const DB_BASE = 'https://raw.githubusercontent.com/Davedashboard/whole-foods-scanner/db/';
+  let currentCode = null;
+
+  function twins(code){
+    const c = [code];
+    if (code.length === 12) c.push('0' + code);
+    if (code.length === 13 && code[0] === '0') c.push(code.slice(1));
+    return c;
+  }
+
+  function fetchProduct(code, ms){
+    const urls = [];
+    twins(code).forEach(c => urls.push(`${OFF}/api/v3/product/${c}?fields=${FIELDS}`, `${OFF}/api/v2/product/${c}.json?fields=${FIELDS}`));
+    return new Promise(resolve => {
+      let pending = urls.length, reached = false, lastErr = '', done = false;
+      const finish = v => { if (!done){ done = true; resolve(v); } };
+      setTimeout(() => finish({ product: null, reached, err: lastErr, timedOut: true }), ms);
+      urls.forEach(u => {
+        fetch(u).then(async res => {
+          if (!(res.ok || res.status === 404)){ lastErr = 'HTTP ' + res.status; return; }
+          reached = true;
+          const d = await res.json().catch(() => null), p = d && d.product;
+          if (p && typeof p === 'object' && Object.keys(p).length) finish({ product: p, reached: true });
+        }).catch(e => { lastErr = e.message || String(e); })
+          .finally(() => { if (--pending === 0) finish({ product: null, reached, err: lastErr }); });
+      });
+    });
+  }
+
+  function fromLocal(r){
+    return { product_name: r.n, brands: r.b, quantity: r.q, ingredients_text_en: r.i || '',
+      additives_tags: (r.a || []).map(t => 'en:' + t), nova_group: r.v || null, categories_tags: r.f ? ['en:fresh-foods'] : [] };
+  }
+
+  // Fill in the product photo (and anything newer) from the network without making the user wait.
+  function refreshPhoto(code){
+    fetchProduct(code, 15000).then(r => {
+      const p = r.product, src = p && (p.image_front_small_url || p.image_front_url);
+      if (!src) return;
+      const h = history.find(x => x.code === code);
+      if (h && h.product){ h.product.image_front_small_url = src; store.set('purely.history', history); renderHistory(); }
+      if (currentCode === code && $('result').style.display === 'block'){
+        const img = $('rImg'); img.onerror = () => { img.hidden = true; }; img.src = src; img.hidden = false;
+      }
+    });
+  }
+
+  function safeRender(p, code, fromHistory){
+    try { renderResult(p, code, fromHistory); return true; }
+    catch (e) { show('home'); toast('Found it, but scoring crashed: ' + (e.message || e), 6000); return false; }
+  }
+
   async function lookup(code){
     code = String(code).replace(/\D/g, '');
     if (code.length < 6){ toast('That barcode looks too short'); return; }
+
+    const seen = history.find(x => x.code && twins(code).includes(x.code) && x.product);
+    if (seen){ if (safeRender(seen.product, code) && !seen.product.image_front_small_url) refreshPhoto(code); return; }
+
     show('loading'); $('loadingText').textContent = 'Looking up ' + code + '…';
-    // Try the barcode as scanned plus its 12/13-digit twin (UPC-A vs EAN-13 with a leading 0),
-    // on the current v3 API and the older v2 one. Any response that carries a product counts as found.
-    const codes = [code];
-    if (code.length === 12) codes.push('0' + code);
-    if (code.length === 13 && code[0] === '0') codes.push(code.slice(1));
-    const urls = [];
-    codes.forEach(c => urls.push(`${OFF}/api/v3/product/${c}?fields=${FIELDS}`, `${OFF}/api/v2/product/${c}.json?fields=${FIELDS}`));
-    let reached = false, lastErr = '', found = null;
-    for (const url of urls){
-      try {
-        const res = await withTimeout(fetch(url), 12000);
-        if (res.status === 404 || res.ok) reached = true; else { lastErr = 'HTTP ' + res.status; continue; }
-        const data = await res.json().catch(() => null);
-        const p = data && data.product;
-        if (p && typeof p === 'object' && Object.keys(p).length){ found = p; break; }
-      } catch (e) { lastErr = e.message || String(e); }
+    let local = null;
+    for (const c of twins(code)){
+      try { local = await withTimeout(LocalDB.get(c), 2000); } catch (e) { local = null; }
+      if (local) break;
     }
-    if (found){
-      try { renderResult(found, code); }
-      catch (e) { show('home'); toast('Found it, but scoring crashed: ' + (e.message || e), 6000); }
-      return;
-    }
+    if (local){ if (safeRender(fromLocal(local), code)) refreshPhoto(code); return; }
+
+    const r = await fetchProduct(code, 7000);
+    if (r.product){ safeRender(r.product, code); return; }
     show('home');
     $('pasteCode').value = code; $('pasteName').value = ''; $('pasteText').value = '';
-    if (!reached){
-      toast(`Couldn't reach the food database (${lastErr}). Check signal, or paste the ingredients.`, 5000);
-    } else {
-      toast(`Barcode ${code} isn't on Open Food Facts yet — paste the ingredients to score it.`, 5000);
-    }
+    if (r.reached) toast(`Barcode ${code} isn't on Open Food Facts yet — paste the ingredients to score it.`, 5000);
+    else if (r.timedOut) toast(`The food database didn't answer within 7 seconds. Try again, or paste the ingredients.`, 5000);
+    else toast(`Couldn't reach the food database (${r.err || 'no signal'}). Paste the ingredients instead.`, 5000);
     openSheet('pasteSheet');
+  }
+
+  // ---------- Food database on the phone ----------
+  const LocalDB = (() => {
+    let dbp = null;
+    function open(){
+      if (!dbp) dbp = new Promise((res, rej) => {
+        const r = indexedDB.open('wfs', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('products', { keyPath: 'c' });
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      }).catch(e => { dbp = null; throw e; });
+      return dbp;
+    }
+    async function get(code){
+      if (!store.get('wfs.db', {}).count) return null;
+      const db = await open();
+      return new Promise(res => { const q = db.transaction('products').objectStore('products').get(code); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); });
+    }
+    async function putMany(recs){
+      const db = await open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction('products', 'readwrite'), st = tx.objectStore('products');
+        recs.forEach(r => st.put(r));
+        tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+      });
+    }
+    return { get, putMany };
+  })();
+
+  function dbLine(text){ $('dbLine').textContent = text; }
+  function dbStatus(){
+    const st = store.get('wfs.db', {});
+    dbLine(st.count ? `Offline database: ${st.count.toLocaleString('en-GB')} UK products · ${new Date(st.built).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : '');
+  }
+
+  let syncing = false;
+  async function syncDB(){
+    if (syncing || !('indexedDB' in window) || !('DecompressionStream' in window) || !('TextDecoderStream' in window)) return;
+    const st = store.get('wfs.db', {});
+    if (st.count && st.checked && Date.now() - st.checked < 20 * 3600e3) return; // checked recently
+    syncing = true;
+    try {
+      const mr = await withTimeout(fetch(DB_BASE + 'meta.json?t=' + Date.now()), 10000);
+      if (!mr.ok) return; // database not built yet
+      const meta = await mr.json();
+      if (meta.version === st.version && st.count){ st.checked = Date.now(); store.set('wfs.db', st); return; }
+
+      const res = await fetch(DB_BASE + 'uk.ndjson.gz?v=' + encodeURIComponent(meta.version));
+      if (!res.ok || !res.body) return;
+      let got = 0, lastPct = -1;
+      const counter = new TransformStream({ transform(chunk, c){
+        got += chunk.byteLength;
+        const pct = meta.bytes ? Math.min(99, Math.floor(got / meta.bytes * 100)) : 0;
+        if (pct !== lastPct){ lastPct = pct; dbLine(`Downloading the food database for offline use… ${pct}%`); }
+        c.enqueue(chunk);
+      } });
+      const reader = res.body.pipeThrough(counter).pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TextDecoderStream()).getReader();
+      let buf = '', batch = [], n = 0;
+      for (;;){
+        const { done, value } = await reader.read();
+        if (value) buf += value;
+        let i;
+        while ((i = buf.indexOf('\n')) >= 0){
+          const line = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (line){ try { batch.push(JSON.parse(line)); } catch (e) {} }
+          if (batch.length >= 2000){ await LocalDB.putMany(batch); n += batch.length; batch = []; }
+        }
+        if (done) break;
+      }
+      if (batch.length){ await LocalDB.putMany(batch); n += batch.length; }
+      if (n){
+        store.set('wfs.db', { version: meta.version, built: meta.built, count: n, checked: Date.now() });
+        try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+      }
+    } catch (e) {
+      // Leave the old copy in place and try again next time the app opens.
+    } finally {
+      syncing = false;
+      dbStatus();
+    }
   }
 
   function productInput(p){
@@ -758,6 +885,7 @@
   }
 
   function renderResult(p, code, fromHistory){
+    currentCode = code || null;
     const input = productInput(p);
     const r = Purity.score(input);
     const name = input.name || 'Unnamed product';
@@ -1114,6 +1242,8 @@
   renderHistory();
   show('home');
   setTimeout(() => { loadZXing().catch(() => {}); }, 1500);
+  dbStatus();
+  setTimeout(syncDB, 3000);
 
   // Installable app (only where service workers are allowed, e.g. GitHub Pages)
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|anthropic/.test(location.hostname)){
