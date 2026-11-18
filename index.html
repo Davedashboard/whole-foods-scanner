@@ -707,24 +707,36 @@
     code = String(code).replace(/\D/g, '');
     if (code.length < 6){ toast('That barcode looks too short'); return; }
     show('loading'); $('loadingText').textContent = 'Looking up ' + code + '…';
-    let data;
-    try {
-      const res = await fetch(`${OFF}/api/v2/product/${code}.json?fields=${FIELDS}`);
-      data = await res.json();
-    } catch (e) {
-      show('home');
-      toast("Couldn't reach the food database. You can paste the ingredients instead.", 4000);
-      $('pasteCode').value = code; openSheet('pasteSheet');
+    // Try the barcode as scanned plus its 12/13-digit twin (UPC-A vs EAN-13 with a leading 0),
+    // on the current v3 API and the older v2 one. Any response that carries a product counts as found.
+    const codes = [code];
+    if (code.length === 12) codes.push('0' + code);
+    if (code.length === 13 && code[0] === '0') codes.push(code.slice(1));
+    const urls = [];
+    codes.forEach(c => urls.push(`${OFF}/api/v3/product/${c}?fields=${FIELDS}`, `${OFF}/api/v2/product/${c}.json?fields=${FIELDS}`));
+    let reached = false, lastErr = '', found = null;
+    for (const url of urls){
+      try {
+        const res = await withTimeout(fetch(url), 12000);
+        if (res.status === 404 || res.ok) reached = true; else { lastErr = 'HTTP ' + res.status; continue; }
+        const data = await res.json().catch(() => null);
+        const p = data && data.product;
+        if (p && typeof p === 'object' && Object.keys(p).length){ found = p; break; }
+      } catch (e) { lastErr = e.message || String(e); }
+    }
+    if (found){
+      try { renderResult(found, code); }
+      catch (e) { show('home'); toast('Found it, but scoring crashed: ' + (e.message || e), 6000); }
       return;
     }
-    if (!data || data.status !== 1 || !data.product){
-      show('home');
-      toast('Not in the database yet — paste the ingredients to score it.', 4000);
-      $('pasteCode').value = code; $('pasteName').value = ''; $('pasteText').value = '';
-      openSheet('pasteSheet');
-      return;
+    show('home');
+    $('pasteCode').value = code; $('pasteName').value = ''; $('pasteText').value = '';
+    if (!reached){
+      toast(`Couldn't reach the food database (${lastErr}). Check signal, or paste the ingredients.`, 5000);
+    } else {
+      toast(`Barcode ${code} isn't on Open Food Facts yet — paste the ingredients to score it.`, 5000);
     }
-    renderResult(data.product, code);
+    openSheet('pasteSheet');
   }
 
   function productInput(p){
